@@ -1,3 +1,42 @@
-body {
-  font-family: Arial, sans-serif;
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#f8f5f7;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:40px;
+}
+
+h1{
+    text-align:center;
+    color:#d16ba5;
+}
+
+.subtitle{
+    text-align:center;
+    color:#777;
+    margin-bottom:40px;
+}
+
+.menu{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+}
+
+button{
+    padding:20px;
+    border:none;
+    border-radius:16px;
+    background:white;
+    cursor:pointer;
+    font-size:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+button:hover{
+    transform:translateY(-2px);
 }
