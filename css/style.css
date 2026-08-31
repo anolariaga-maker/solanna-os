@@ -24,3 +24,26 @@ function mostrarModulo(modulo){
     }
 
 }
+#contenido{
+    margin-top:40px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.card h2{
+    margin-top:0;
+}
+
+.card input{
+    width:100%;
+    padding:12px;
+    margin-bottom:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    box-sizing:border-box;
+}
