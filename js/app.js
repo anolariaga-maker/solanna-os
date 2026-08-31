@@ -1,3 +1,5 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec";
+
 function mostrarModulo(modulo) {
 
     const contenido = document.getElementById("contenido");
@@ -9,57 +11,52 @@ function mostrarModulo(modulo) {
 
                 <h2>Nueva Venta</h2>
 
-                <input type="text" placeholder="Cliente">
+                <input id="cliente" type="text" placeholder="Cliente">
 
-                <input type="text" placeholder="Producto">
+                <input id="producto" type="text" placeholder="Producto">
 
-                <input type="number" placeholder="Cantidad">
+                <input id="cantidad" type="number" placeholder="Cantidad">
 
-                <input type="number" placeholder="Precio">
+                <input id="precio" type="number" placeholder="Precio">
 
-                <button>Guardar Venta</button>
+                <button onclick="guardarVenta()">
+                    Guardar Venta
+                </button>
+
+                <div id="resultado"></div>
 
             </div>
         `;
     }
+}
 
-    if (modulo === "compras") {
+async function guardarVenta() {
 
-        contenido.innerHTML = `
-            <div class="card">
-                <h2>Nueva Compra</h2>
-                <p>Módulo en construcción.</p>
-            </div>
-        `;
-    }
+    const resultado = document.getElementById("resultado");
 
-    if (modulo === "clientes") {
+    resultado.innerHTML = "Enviando...";
 
-        contenido.innerHTML = `
-            <div class="card">
-                <h2>Clientes</h2>
-                <p>Módulo en construcción.</p>
-            </div>
-        `;
-    }
+    try {
 
-    if (modulo === "productos") {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                prueba: true,
+                fecha: new Date()
+            })
+        });
 
-        contenido.innerHTML = `
-            <div class="card">
-                <h2>Productos</h2>
-                <p>Módulo en construcción.</p>
-            </div>
-        `;
-    }
+        const data = await response.json();
 
-    if (modulo === "caja") {
+        resultado.innerHTML =
+            "<br>✅ Conexión exitosa: " +
+            data.mensaje;
 
-        contenido.innerHTML = `
-            <div class="card">
-                <h2>Caja</h2>
-                <p>Módulo en construcción.</p>
-            </div>
-        `;
+    } catch (error) {
+
+        resultado.innerHTML =
+            "<br>❌ Error: " + error;
+
+        console.error(error);
     }
 }
