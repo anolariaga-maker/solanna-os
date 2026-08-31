@@ -1,29 +1,46 @@
-function mostrarModulo(modulo){
-
-    const contenido = document.getElementById("contenido");
-
-    if(modulo === "ventas"){
-
-        contenido.innerHTML = `
-            <div class="card">
-
-                <h2>Nueva Venta</h2>
-
-                <input type="text" placeholder="Cliente">
-
-                <input type="text" placeholder="Producto">
-
-                <input type="number" placeholder="Cantidad">
-
-                <input type="number" placeholder="Precio">
-
-                <button>Guardar Venta</button>
-
-            </div>
-        `;
-    }
-
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#f8f5f7;
 }
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:40px;
+}
+
+h1{
+    text-align:center;
+    color:#d16ba5;
+}
+
+.subtitle{
+    text-align:center;
+    color:#777;
+    margin-bottom:40px;
+}
+
+.menu{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+}
+
+button{
+    padding:20px;
+    border:none;
+    border-radius:16px;
+    background:white;
+    cursor:pointer;
+    font-size:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+
 #contenido{
     margin-top:40px;
 }
