@@ -35,22 +35,32 @@ function mostrarModulo(modulo) {
         `;
     }
 
-    if (modulo === "compras") {
+if (modulo === "compras") {
 
-        contenido.innerHTML = `
-            <h2>Compras</h2>
-            <p>Próximamente</p>
-        `;
-    }
+    contenido.innerHTML = `
+        <h2>Nueva Compra</h2>
 
-    if (modulo === "productos") {
+        <input id="proveedorCompra" placeholder="ID Proveedor">
 
-        contenido.innerHTML = `
-            <h2>Productos</h2>
-            <p>Próximamente</p>
-        `;
-    }
+        <br><br>
 
+        <input id="varianteCompra" placeholder="ID Variante">
+
+        <br><br>
+
+        <input id="cantidadCompra" type="number" placeholder="Cantidad">
+
+        <br><br>
+
+        <input id="costoCompra" type="number" placeholder="Costo Unitario">
+
+        <br><br>
+
+        <button onclick="guardarCompra()">
+            Guardar Compra
+        </button>
+    `;
+}
     if (modulo === "caja") {
 
         contenido.innerHTML = `
@@ -90,6 +100,50 @@ async function guardarVenta() {
             {
                 method: "POST",
                 body: JSON.stringify(datosVenta)
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        alert(JSON.stringify(resultado));
+
+    } catch (error) {
+
+        alert("Error: " + error);
+
+    }
+}
+
+async function guardarCompra() {
+
+    const datosCompra = {
+
+        idProveedor: document.getElementById("proveedorCompra").value,
+
+        fechaHora: new Date().toISOString(),
+
+        facturaRemito: "",
+
+        estadoPago: "Pagado",
+
+        observaciones: "Compra desde SolannaOS Web",
+
+        productos: [
+            {
+                idVariante: document.getElementById("varianteCompra").value,
+                cantidad: Number(document.getElementById("cantidadCompra").value),
+                costoUnitario: Number(document.getElementById("costoCompra").value)
+            }
+        ]
+    };
+
+    try {
+
+        const respuesta = await fetch(
+            "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec",
+            {
+                method: "POST",
+                body: JSON.stringify(datosCompra)
             }
         );
 
