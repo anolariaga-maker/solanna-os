@@ -62,5 +62,44 @@ function mostrarModulo(modulo) {
 
 async function guardarVenta() {
 
-    alert("Venta simulada");
+    const datosVenta = {
+
+        idCliente: document.getElementById("clienteVenta").value,
+
+        fechaHora: new Date().toISOString(),
+
+        descMonto: 0,
+
+        estadoCobro: "CONTADO",
+
+        observaciones: "Venta desde SolannaOS Web",
+
+        productos: [
+            {
+                idVariante: document.getElementById("varianteVenta").value,
+                cantidad: Number(document.getElementById("cantidadVenta").value),
+                precioUnitario: 8000
+            }
+        ]
+    };
+
+    try {
+
+        const respuesta = await fetch(
+            "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec",
+            {
+                method: "POST",
+                body: JSON.stringify(datosVenta)
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        alert(JSON.stringify(resultado));
+
+    } catch (error) {
+
+        alert("Error: " + error);
+
+    }
 }
