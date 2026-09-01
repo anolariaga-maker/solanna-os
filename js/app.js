@@ -29,11 +29,30 @@ function mostrarModulo(modulo) {
 
     if (modulo === "clientes") {
 
-        contenido.innerHTML = `
-            <h2>Clientes</h2>
-            <p>Próximamente</p>
-        `;
-    }
+    contenido.innerHTML = `
+        <h2>Nuevo Cliente</h2>
+
+        <input id="nombreCliente" placeholder="Nombre Completo">
+
+        <br><br>
+
+        <input id="telefonoCliente" placeholder="Teléfono">
+
+        <br><br>
+
+        <input id="instagramCliente" placeholder="Instagram">
+
+        <br><br>
+
+        <input id="obsCliente" placeholder="Observaciones">
+
+        <br><br>
+
+        <button onclick="guardarCliente()">
+            Guardar Cliente
+        </button>
+    `;
+}
 
 if (modulo === "compras") {
 
@@ -162,4 +181,9 @@ tipoOperacion: "COMPRA",
         alert("Error: " + error);
 
     }
+}
+
+async function guardarCliente() {
+
+    alert("Cliente listo para conectar");
 }
