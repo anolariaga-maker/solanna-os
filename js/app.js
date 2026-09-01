@@ -71,9 +71,12 @@ if (modulo === "compras") {
 }
 
 async function guardarVenta() {
+    
 
     const datosVenta = {
 
+tipoOperacion: "VENTA",
+        
         idCliente: document.getElementById("clienteVenta").value,
 
         fechaHora: new Date().toISOString(),
@@ -117,6 +120,9 @@ async function guardarVenta() {
 async function guardarCompra() {
 
     const datosCompra = {
+
+tipoOperacion: "COMPRA",
+        
 
         idProveedor: document.getElementById("proveedorCompra").value,
 
