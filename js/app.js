@@ -185,5 +185,38 @@ tipoOperacion: "COMPRA",
 
 async function guardarCliente() {
 
-    alert("Cliente listo para conectar");
+    const datosCliente = {
+
+        tipoOperacion: "CLIENTE",
+
+        nombreCompleto: document.getElementById("nombreCliente").value,
+
+        telefono: document.getElementById("telefonoCliente").value,
+
+        instagram: document.getElementById("instagramCliente").value,
+
+        observaciones: document.getElementById("obsCliente").value
+
+    };
+
+    try {
+
+        const respuesta = await fetch(
+            "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec",
+            {
+                method: "POST",
+                body: JSON.stringify(datosCliente)
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        alert(JSON.stringify(resultado));
+
+    } catch (error) {
+
+        alert("Error: " + error);
+
+    }
+
 }
