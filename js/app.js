@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec";
+console.log("SolannaOS iniciado");
 
 function mostrarModulo(modulo) {
 
@@ -7,56 +7,60 @@ function mostrarModulo(modulo) {
     if (modulo === "ventas") {
 
         contenido.innerHTML = `
-            <div class="card">
+            <h2>Nueva Venta</h2>
 
-                <h2>Nueva Venta</h2>
+            <input id="clienteVenta" placeholder="ID Cliente">
 
-                <input id="cliente" type="text" placeholder="Cliente">
+            <br><br>
 
-                <input id="producto" type="text" placeholder="Producto">
+            <input id="varianteVenta" placeholder="ID Variante">
 
-                <input id="cantidad" type="number" placeholder="Cantidad">
+            <br><br>
 
-                <input id="precio" type="number" placeholder="Precio">
+            <input id="cantidadVenta" type="number" placeholder="Cantidad">
 
-                <button onclick="guardarVenta()">
-                    Guardar Venta
-                </button>
+            <br><br>
 
-                <div id="resultado"></div>
+            <button onclick="guardarVenta()">
+                Guardar Venta
+            </button>
+        `;
+    }
 
-            </div>
+    if (modulo === "clientes") {
+
+        contenido.innerHTML = `
+            <h2>Clientes</h2>
+            <p>Próximamente</p>
+        `;
+    }
+
+    if (modulo === "compras") {
+
+        contenido.innerHTML = `
+            <h2>Compras</h2>
+            <p>Próximamente</p>
+        `;
+    }
+
+    if (modulo === "productos") {
+
+        contenido.innerHTML = `
+            <h2>Productos</h2>
+            <p>Próximamente</p>
+        `;
+    }
+
+    if (modulo === "caja") {
+
+        contenido.innerHTML = `
+            <h2>Caja</h2>
+            <p>Próximamente</p>
         `;
     }
 }
 
 async function guardarVenta() {
 
-    const resultado = document.getElementById("resultado");
-
-    resultado.innerHTML = "Enviando...";
-
-    try {
-
-        const response = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                prueba: true,
-                fecha: new Date()
-            })
-        });
-
-        const data = await response.json();
-
-        resultado.innerHTML =
-            "<br>✅ Conexión exitosa: " +
-            data.mensaje;
-
-    } catch (error) {
-
-        resultado.innerHTML =
-            "<br>❌ Error: " + error;
-
-        console.error(error);
-    }
+    alert("Venta simulada");
 }
