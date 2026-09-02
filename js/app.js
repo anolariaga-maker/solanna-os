@@ -80,6 +80,37 @@ if (modulo === "compras") {
         </button>
     `;
 }
+
+    if (modulo === "productos") {
+
+    contenido.innerHTML = `
+        <h2>Nuevo Producto</h2>
+
+        <input id="nombreProducto" placeholder="Nombre Producto">
+
+        <br><br>
+
+        <input id="colorProducto" placeholder="ID Color">
+
+        <br><br>
+
+        <input id="talleProducto" placeholder="ID Talle">
+
+        <br><br>
+
+        <input id="costoProducto" type="number" placeholder="Costo">
+
+        <br><br>
+
+        <input id="stockProducto" type="number" placeholder="Stock Inicial">
+
+        <br><br>
+
+        <button onclick="guardarProducto()">
+            Guardar Producto
+        </button>
+    `;
+}
     if (modulo === "caja") {
 
         contenido.innerHTML = `
@@ -219,4 +250,9 @@ async function guardarCliente() {
 
     }
 
+}
+
+async function guardarProducto() {
+
+    alert("Producto listo para conectar");
 }
