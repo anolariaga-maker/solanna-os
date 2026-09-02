@@ -3,7 +3,32 @@ console.log("SolannaOS iniciado");
 function mostrarModulo(modulo) {
 
     const contenido = document.getElementById("contenido");
+if (modulo === "inicio") {
 
+    contenido.innerHTML = `
+        <h2>Dashboard</h2>
+
+        <div class="card">
+            <h3>Capital Real</h3>
+            <p>$0</p>
+        </div>
+
+        <div class="card">
+            <h3>Ganancia Disponible</h3>
+            <p>$0</p>
+        </div>
+
+        <div class="card">
+            <h3>Fondo Emergencia</h3>
+            <p>$0</p>
+        </div>
+
+        <div class="card">
+            <h3>Billetera Angie</h3>
+            <p>$0</p>
+        </div>
+    `;
+}
     if (modulo === "ventas") {
 
         contenido.innerHTML = `
