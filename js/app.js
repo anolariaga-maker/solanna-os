@@ -254,5 +254,40 @@ async function guardarCliente() {
 
 async function guardarProducto() {
 
-    alert("Producto listo para conectar");
+    const datosProducto = {
+
+        tipoOperacion: "PRODUCTO",
+
+        nombre: document.getElementById("nombreProducto").value,
+
+        idColor: document.getElementById("colorProducto").value,
+
+        idTalle: document.getElementById("talleProducto").value,
+
+        costo: Number(document.getElementById("costoProducto").value),
+
+        stockInicial: Number(document.getElementById("stockProducto").value)
+
+    };
+
+    try {
+
+        const respuesta = await fetch(
+            "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec",
+            {
+                method: "POST",
+                body: JSON.stringify(datosProducto)
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        alert(JSON.stringify(resultado));
+
+    } catch (error) {
+
+        alert("Error: " + error);
+
+    }
+
 }
