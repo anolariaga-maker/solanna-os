@@ -4,9 +4,40 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9
 
 // ⚠️ Debe ser EXACTAMENTE el mismo Client ID que pusiste en Auth.gs (GOOGLE_CLIENT_ID)
 const GOOGLE_CLIENT_ID = "642105410007-b8qd9ga1s9q7160q6ukc32u001mdd48r.apps.googleusercontent.com";
-
 let ID_TOKEN = null;
 let moduloActivo = "inicio";
+
+// ============================================================
+// MODO CLARO / OSCURO
+// ============================================================
+// No toca ninguna lógica de negocio ni llamadas al backend — solo
+// alterna un atributo en <html> y lo guarda en localStorage.
+
+function alternarTema() {
+    const actual = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    const nuevo = actual === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", nuevo);
+    try { localStorage.setItem("solannaos-theme", nuevo); } catch (e) { /* sin localStorage, sigue funcionando igual */ }
+    actualizarBotonTema(nuevo);
+}
+
+function actualizarBotonTema(tema) {
+    const etiqueta = document.getElementById("etiquetaTema");
+    const icono = document.getElementById("iconoTema");
+    if (!etiqueta || !icono) return;
+
+    if (tema === "dark") {
+        etiqueta.textContent = "Modo claro";
+        icono.innerHTML = '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>';
+    } else {
+        etiqueta.textContent = "Modo oscuro";
+        icono.innerHTML = '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>';
+    }
+}
+
+// Al cargar la app, reflejar el tema ya aplicado por el script anti-parpadeo del <head>
+actualizarBotonTema(document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
+
 
 function formatearMoneda(numero) {
     const valor = Number(numero) || 0;
