@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolannaOS</title>
 
+    <script>
+        // Anti-parpadeo: aplica el tema guardado ANTES de que se pinte la página,
+        // así no se ve un flash de modo claro al entrar con el modo oscuro elegido.
+        (function () {
+            try {
+                var guardado = localStorage.getItem("solannaos-theme");
+                if (guardado === "dark" || guardado === "light") {
+                    document.documentElement.setAttribute("data-theme", guardado);
+                }
+            } catch (e) { /* localStorage no disponible: seguimos en modo claro */ }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,22 +25,16 @@
     <link rel="stylesheet" href="css/style.css">
 
     <script>
-        // Estado global de la librería de Google Identity. app.js lo consulta
-        // apenas termina de cargar, por si el aviso de abajo ya pasó antes.
-        window.googleIdentityStatus = "cargando"; // "cargando" | "listo" | "error"
+        window.googleIdentityStatus = "cargando";
 
         function onGoogleIdentityLoaded() {
             window.googleIdentityStatus = "listo";
-            if (typeof onGoogleIdentityReady === "function") {
-                onGoogleIdentityReady();
-            }
+            if (typeof onGoogleIdentityReady === "function") onGoogleIdentityReady();
         }
 
         function onGoogleIdentityError() {
             window.googleIdentityStatus = "error";
-            if (typeof onGoogleIdentityFailed === "function") {
-                onGoogleIdentityFailed();
-            }
+            if (typeof onGoogleIdentityFailed === "function") onGoogleIdentityFailed();
         }
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer
@@ -40,6 +47,7 @@
     <!-- ============================================================ -->
     <div id="loginScreen">
         <div class="login-card">
+            <div class="login-seal">S</div>
             <div class="login-mark">Solanna<span>OS</span></div>
             <p class="login-sub">Iniciá sesión con tu cuenta de Google para entrar.</p>
             <div id="botonGoogleLogin"></div>
@@ -55,7 +63,10 @@
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="cerrarMenuMovil()"></div>
 
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-brand">Solanna<span>OS</span></div>
+            <div class="sidebar-brand">
+                <div class="sidebar-seal">S</div>
+                <div class="sidebar-brand-text">Solanna<span>OS</span></div>
+            </div>
             <nav>
                 <button class="nav-item" data-modulo="inicio" onclick="irAModulo('inicio')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg>
@@ -95,6 +106,10 @@
                 </button>
             </nav>
             <div class="sidebar-footer">
+                <button class="theme-toggle" id="botonTema" onclick="alternarTema()">
+                    <span id="etiquetaTema">Modo oscuro</span>
+                    <svg id="iconoTema" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+                </button>
                 <button class="nav-item" onclick="cerrarSesion()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 17.5 20 12l-5-5.5M20 12H9"/><path d="M9 20H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4"/></svg>
                     Salir
@@ -104,12 +119,10 @@
 
         <div class="main-area">
             <div class="topbar">
-                <span class="topbar-brand">Solanna<span>OS</span></span>
+                <span class="topbar-brand"><span style="font-family:var(--font-display);">S</span>olanna<span>OS</span></span>
                 <button class="topbar-toggle" onclick="abrirMenuMovil()" aria-label="Abrir menú">☰</button>
             </div>
-            <main id="contenido">
-                <!-- mostrarModulo() de app.js escribe acá adentro -->
-            </main>
+            <main id="contenido"></main>
         </div>
 
     </div>
