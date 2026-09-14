@@ -3,7 +3,7 @@ console.log("SolannaOS iniciado");
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec";
 
 // ⚠️ Debe ser EXACTAMENTE el mismo Client ID que pusiste en Auth.gs (GOOGLE_CLIENT_ID)
-const GOOGLE_CLIENT_ID = "TU_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "642105410007-b8qd9ga1s9q7160q6ukc32u001mdd48r.apps.googleusercontent.com";
 
 let ID_TOKEN = null;
 
