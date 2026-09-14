@@ -6,6 +6,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9
 const GOOGLE_CLIENT_ID = "642105410007-b8qd9ga1s9q7160q6ukc32u001mdd48r.apps.googleusercontent.com";
 
 let ID_TOKEN = null;
+let moduloActivo = "inicio";
 
 function formatearMoneda(numero) {
     const valor = Number(numero) || 0;
@@ -23,28 +24,23 @@ function formatearFecha(fecha) {
 //
 // index.html define, ANTES de pedir el script de Google, dos funciones
 // globales: onGoogleIdentityLoaded() y onGoogleIdentityError(), enganchadas
-// a los atributos onload/onerror del <script> de Google. Esas funciones,
-// a su vez, llaman a onGoogleIdentityReady() / onGoogleIdentityFailed()
-// (definidas acá abajo) SI ya existen. Como puede pasar en cualquier orden
-// (que Google cargue antes o después de que este archivo termine de
-// interpretarse), al final de este archivo revisamos el estado actual por
-// si el aviso ya pasó antes de que existiéramos.
+// a los atributos onload/onerror del <script> de Google. Esas funciones
+// llaman a onGoogleIdentityReady() / onGoogleIdentityFailed() (acá abajo)
+// si ya existen. Al final de este archivo revisamos el estado actual por
+// si el aviso ya pasó antes de que este archivo terminara de cargar.
 
 function onGoogleIdentityReady() {
     if (typeof google === "undefined" || !google.accounts || !google.accounts.id) {
-        // No debería pasar nunca (onload solo dispara si cargó bien),
-        // pero si pasa, mostramos el error en vez de romper la consola.
         onGoogleIdentityFailed();
         return;
     }
-
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
     });
     google.accounts.id.renderButton(
         document.getElementById("botonGoogleLogin"),
-        { theme: "outline", size: "large", text: "signin_with" }
+        { theme: "outline", size: "large", text: "signin_with", shape: "pill" }
     );
     google.accounts.id.prompt();
 }
@@ -53,16 +49,10 @@ function onGoogleIdentityFailed() {
     const elError = document.getElementById("errorLogin");
     if (elError) {
         elError.textContent = "No se pudo cargar el inicio de sesión de Google. " +
-            "Revisá tu conexión a internet y recargá la página. Si el problema sigue, " +
-            "puede ser un bloqueador de scripts/anuncios interfiriendo con accounts.google.com.";
+            "Revisá tu conexión a internet y recargá la página.";
     }
 }
 
-// Punto de entrada real: se ejecuta apenas el navegador termina de leer
-// este archivo. Si Google Identity ya avisó que está listo (o que falló)
-// ANTES de que llegáramos hasta acá, actuamos ya. Si todavía está
-// cargando, no hacemos nada más: cuando termine, index.html va a llamar
-// a onGoogleIdentityReady()/onGoogleIdentityFailed() por su cuenta.
 if (window.googleIdentityStatus === "listo") {
     onGoogleIdentityReady();
 } else if (window.googleIdentityStatus === "error") {
@@ -71,25 +61,21 @@ if (window.googleIdentityStatus === "listo") {
 
 function handleCredentialResponse(response) {
     ID_TOKEN = response.credential;
-
     document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appScreen").style.display = "block";
-
-    mostrarModulo("inicio");
+    document.getElementById("appScreen").style.display = "flex";
+    irAModulo("inicio");
 }
 
 function cerrarSesion() {
     ID_TOKEN = null;
-    google.accounts.id.disableAutoSelect();
+    if (typeof google !== "undefined" && google.accounts) {
+        google.accounts.id.disableAutoSelect();
+    }
     document.getElementById("appScreen").style.display = "none";
-    document.getElementById("loginScreen").style.display = "block";
+    document.getElementById("loginScreen").style.display = "flex";
     document.getElementById("errorLogin").textContent = "";
 }
 
-/**
- * Wrapper de fetch que agrega el idToken y maneja el caso de sesión rechazada
- * por el backend (token vencido, cuenta no autorizada, etc).
- */
 async function llamarBackend(opciones) {
     let url = opciones.url;
     let init = { method: opciones.method || "GET" };
@@ -114,7 +100,31 @@ async function llamarBackend(opciones) {
 }
 
 // ============================================================
-// NAVEGACIÓN DE MÓDULOS
+// NAVEGACIÓN
+// ============================================================
+
+function irAModulo(modulo) {
+    moduloActivo = modulo;
+    document.querySelectorAll(".nav-item[data-modulo]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.modulo === modulo);
+    });
+    mostrarModulo(modulo);
+    cerrarMenuMovil();
+    document.getElementById("contenido").scrollTo({ top: 0 });
+}
+
+function abrirMenuMovil() {
+    document.getElementById("sidebar").classList.add("abierto");
+    document.getElementById("sidebarOverlay").classList.add("visible");
+}
+
+function cerrarMenuMovil() {
+    document.getElementById("sidebar").classList.remove("abierto");
+    document.getElementById("sidebarOverlay").classList.remove("visible");
+}
+
+// ============================================================
+// RENDERIZADO DE MÓDULOS
 // ============================================================
 
 function mostrarModulo(modulo) {
@@ -123,21 +133,57 @@ function mostrarModulo(modulo) {
 
     if (modulo === "inicio") {
         contenido.innerHTML = `
-            <h2>Dashboard</h2>
-            <div class="card"><h3>Capital Real</h3><p id="kpiCapitalReal">Cargando...</p></div>
-            <div class="card"><h3>Ganancia Disponible</h3><p id="kpiGananciaDisponible">Cargando...</p></div>
-            <div class="card"><h3>Fondo Emergencia</h3><p id="kpiFondoEmergencia">Cargando...</p></div>
-            <div class="card"><h3>Billetera Angie</h3><p id="kpiBilleteraAngie">Cargando...</p></div>
-            <div class="card"><h3>Ventas del Mes</h3><p id="kpiVentasDelMes">Cargando...</p></div>
-            <div class="card"><h3>Cobros Pendientes</h3><p id="kpiCobrosPendientes">Cargando...</p></div>
-            <div class="card"><h3>Stock Bajo</h3><p id="kpiStockBajo">Cargando...</p></div>
-            <div class="card"><h3>Reservas Activas</h3><p id="kpiReservasActivas">Cargando...</p></div>
+            <div class="page-header">
+                <div>
+                    <h2>Inicio</h2>
+                    <p class="page-sub">Así está SolannaOS hoy.</p>
+                </div>
+            </div>
 
-            <hr>
-            <h2>Alertas</h2>
-            <div id="alertaStockBajo"><p>Cargando...</p></div>
-            <div id="alertaReservas"><p>Cargando...</p></div>
-            <div id="alertaDeuda"><p>Cargando...</p></div>
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-hero">
+                    <div class="kpi-label">Capital Real</div>
+                    <div class="kpi-value" id="kpiCapitalReal">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Ganancia Disponible</div>
+                    <div class="kpi-value" id="kpiGananciaDisponible">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Ventas del Mes</div>
+                    <div class="kpi-value" id="kpiVentasDelMes">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Fondo Emergencia</div>
+                    <div class="kpi-value" id="kpiFondoEmergencia">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Cobros Pendientes</div>
+                    <div class="kpi-value" id="kpiCobrosPendientes">—</div>
+                </div>
+            </div>
+
+            <div class="kpi-grid-secundaria">
+                <div class="kpi-card">
+                    <div class="kpi-label">Billetera Angie</div>
+                    <div class="kpi-value" id="kpiBilleteraAngie">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Stock Bajo</div>
+                    <div class="kpi-value" id="kpiStockBajo">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Reservas Activas</div>
+                    <div class="kpi-value" id="kpiReservasActivas">—</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Alertas</h3></div>
+                <div id="alertaStockBajo"></div>
+                <div id="alertaReservas"></div>
+                <div id="alertaDeuda"></div>
+            </div>
         `;
         cargarDashboard();
         cargarAlertas();
@@ -145,187 +191,295 @@ function mostrarModulo(modulo) {
 
     if (modulo === "ventas") {
         contenido.innerHTML = `
-            <h2>Nueva Venta</h2>
-            <input id="busquedaClienteVenta" placeholder="Buscar cliente por nombre o teléfono" oninput="buscarClientesWeb('busquedaClienteVenta','resultadosClienteVenta','clienteVenta')">
-            <div id="resultadosClienteVenta"></div>
-            <input id="clienteVenta" placeholder="ID Cliente">
-            <br><br>
-            <input id="varianteVenta" placeholder="ID Variante">
-            <br><br>
-            <input id="cantidadVenta" type="number" placeholder="Cantidad">
-            <br><br>
-            <input id="metodoPagoVenta" placeholder="ID Método de Pago (opcional)">
-            <br><br>
-            <button onclick="guardarVenta()">Guardar Venta</button>
-            <div id="comprobanteVenta"></div>
+            <div class="page-header"><div><h2>Ventas</h2><p class="page-sub">Registrá una venta y generá el comprobante al instante.</p></div></div>
+            <div class="card" style="max-width:540px;">
+                <div class="field search-wrap">
+                    <label>Cliente</label>
+                    <input id="busquedaClienteVenta" type="text" placeholder="Buscá por nombre o teléfono" oninput="buscarClientesWeb('busquedaClienteVenta','resultadosClienteVenta','clienteVenta')">
+                    <div id="resultadosClienteVenta" class="search-results" style="display:none;"></div>
+                </div>
+                <div class="field avanzado">
+                    <label>ID de cliente</label>
+                    <input id="clienteVenta" type="text" placeholder="Se completa solo al elegir arriba">
+                </div>
+                <div class="field avanzado">
+                    <label>Producto (ID de variante)</label>
+                    <input id="varianteVenta" type="text" placeholder="Ej: VAR-A1B2C3D4">
+                    <span class="hint">Lo encontrás en el módulo Productos.</span>
+                </div>
+                <div class="field">
+                    <label>Cantidad</label>
+                    <input id="cantidadVenta" type="number" placeholder="1">
+                </div>
+                <div class="field">
+                    <label>Método de pago (opcional)</label>
+                    <input id="metodoPagoVenta" type="text" placeholder="Ej: efectivo, transferencia">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarVenta()">Guardar venta</button>
+                <div id="comprobanteVenta"></div>
+            </div>
         `;
     }
 
     if (modulo === "clientes") {
         contenido.innerHTML = `
-            <h2>Nuevo Cliente</h2>
-            <input id="nombreCliente" placeholder="Nombre Completo">
-            <br><br>
-            <input id="telefonoCliente" placeholder="Teléfono">
-            <br><br>
-            <input id="instagramCliente" placeholder="Instagram">
-            <br><br>
-            <input id="obsCliente" placeholder="Observaciones">
-            <br><br>
-            <button onclick="guardarCliente()">Guardar Cliente</button>
+            <div class="page-header"><div><h2>Clientes</h2><p class="page-sub">Sumá un cliente nuevo a SolannaOS.</p></div></div>
+            <div class="card" style="max-width:480px;">
+                <div class="field">
+                    <label>Nombre completo</label>
+                    <input id="nombreCliente" type="text" placeholder="Ej: Sofía Martínez">
+                </div>
+                <div class="field">
+                    <label>Teléfono</label>
+                    <input id="telefonoCliente" type="text" placeholder="Para enviar el comprobante por WhatsApp">
+                </div>
+                <div class="field">
+                    <label>Instagram</label>
+                    <input id="instagramCliente" type="text" placeholder="@usuario (opcional)">
+                </div>
+                <div class="field">
+                    <label>Observaciones</label>
+                    <input id="obsCliente" type="text" placeholder="Opcional">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarCliente()">Guardar cliente</button>
+            </div>
         `;
     }
 
     if (modulo === "compras") {
         contenido.innerHTML = `
-            <h2>Nueva Compra</h2>
-            <input id="proveedorCompra" placeholder="ID Proveedor">
-            <br><br>
-            <input id="varianteCompra" placeholder="ID Variante">
-            <br><br>
-            <input id="cantidadCompra" type="number" placeholder="Cantidad">
-            <br><br>
-            <input id="costoCompra" type="number" placeholder="Costo Unitario">
-            <br><br>
-            <input id="metodoPagoCompra" placeholder="ID Método de Pago (opcional)">
-            <br><br>
-            <button onclick="guardarCompra()">Guardar Compra</button>
+            <div class="page-header"><div><h2>Compras</h2><p class="page-sub">Registrá mercadería que entra al local.</p></div></div>
+            <div class="card" style="max-width:480px;">
+                <div class="field avanzado">
+                    <label>ID de proveedor</label>
+                    <input id="proveedorCompra" type="text" placeholder="Ej: PROV-001">
+                </div>
+                <div class="field avanzado">
+                    <label>Producto (ID de variante)</label>
+                    <input id="varianteCompra" type="text" placeholder="Ej: VAR-A1B2C3D4">
+                </div>
+                <div class="field">
+                    <label>Cantidad</label>
+                    <input id="cantidadCompra" type="number" placeholder="1">
+                </div>
+                <div class="field">
+                    <label>Costo unitario</label>
+                    <input id="costoCompra" type="number" placeholder="$">
+                </div>
+                <div class="field">
+                    <label>Método de pago (opcional)</label>
+                    <input id="metodoPagoCompra" type="text" placeholder="Ej: efectivo, transferencia">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarCompra()">Guardar compra</button>
+            </div>
         `;
     }
 
     if (modulo === "productos") {
         contenido.innerHTML = `
-            <h2>Nuevo Producto</h2>
-            <input id="nombreProducto" placeholder="Nombre Producto">
-            <br><br>
-            <input id="colorProducto" placeholder="ID Color">
-            <br><br>
-            <input id="talleProducto" placeholder="ID Talle">
-            <br><br>
-            <input id="costoProducto" type="number" placeholder="Costo">
-            <br><br>
-            <input id="stockProducto" type="number" placeholder="Stock Inicial">
-            <br><br>
-            <button onclick="guardarProducto()">Guardar Producto</button>
+            <div class="page-header"><div><h2>Productos</h2><p class="page-sub">Cargá un producto nuevo con su primera variante.</p></div></div>
+            <div class="card" style="max-width:480px;">
+                <div class="field">
+                    <label>Nombre del producto</label>
+                    <input id="nombreProducto" type="text" placeholder="Ej: Conjunto Sofía">
+                </div>
+                <div class="form-grid">
+                    <div class="field avanzado">
+                        <label>ID de color</label>
+                        <input id="colorProducto" type="text" placeholder="Ej: COL-01">
+                    </div>
+                    <div class="field avanzado">
+                        <label>ID de talle</label>
+                        <input id="talleProducto" type="text" placeholder="Ej: TAL-M">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Costo</label>
+                        <input id="costoProducto" type="number" placeholder="$">
+                    </div>
+                    <div class="field">
+                        <label>Stock inicial</label>
+                        <input id="stockProducto" type="number" placeholder="0">
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarProducto()">Guardar producto</button>
+            </div>
         `;
     }
 
     if (modulo === "caja") {
         contenido.innerHTML = `
-            <h2>Caja</h2>
-            <p>Registrar un movimiento manual (ej: retiro, gasto operativo).</p>
-            <select id="tipoMovCaja">
-                <option value="INGRESO">Ingreso</option>
-                <option value="EGRESO">Egreso</option>
-                <option value="MOV_INTERNO">Movimiento Interno</option>
-            </select>
-            <br><br>
-            <input id="montoMovCaja" type="number" placeholder="Monto">
-            <br><br>
-            <input id="conceptoMovCaja" placeholder="Concepto">
-            <br><br>
-            <input id="metodoPagoMovCaja" placeholder="ID Método de Pago (opcional)">
-            <br><br>
-            <button onclick="guardarMovimientoCaja()">Guardar Movimiento</button>
+            <div class="page-header"><div><h2>Caja</h2><p class="page-sub">Movimientos manuales y transferencias entre bolsillos.</p></div></div>
 
-            <hr>
+            <div class="card" style="max-width:480px;">
+                <div class="card-header"><h3>Nuevo movimiento de Caja</h3></div>
+                <div class="field">
+                    <label>Tipo</label>
+                    <select id="tipoMovCaja">
+                        <option value="INGRESO">Ingreso</option>
+                        <option value="EGRESO">Egreso</option>
+                        <option value="MOV_INTERNO">Movimiento interno</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Monto</label>
+                    <input id="montoMovCaja" type="number" placeholder="$">
+                </div>
+                <div class="field">
+                    <label>Concepto</label>
+                    <input id="conceptoMovCaja" type="text" placeholder="Ej: Retiro personal">
+                </div>
+                <div class="field avanzado">
+                    <label>ID de método de pago (opcional)</label>
+                    <input id="metodoPagoMovCaja" type="text" placeholder="Opcional">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarMovimientoCaja()">Guardar movimiento</button>
+            </div>
 
-            <h2>Transferir entre Bolsillos</h2>
-            <p>Ej: mover parte de la Ganancia Disponible al Fondo de Emergencia o a la Billetera Angie.</p>
-            <select id="bolsilloOrigenTransf">
-                <option value="CAPITAL_REAL">Capital Real</option>
-                <option value="GANANCIA_DISP" selected>Ganancia Disponible</option>
-                <option value="FONDO_EMERG">Fondo Emergencia</option>
-                <option value="BILLETERA_ANGIE">Billetera Angie</option>
-            </select>
-            <br><br>
-            <select id="bolsilloDestinoTransf">
-                <option value="CAPITAL_REAL">Capital Real</option>
-                <option value="GANANCIA_DISP">Ganancia Disponible</option>
-                <option value="FONDO_EMERG" selected>Fondo Emergencia</option>
-                <option value="BILLETERA_ANGIE">Billetera Angie</option>
-            </select>
-            <br><br>
-            <input id="montoTransf" type="number" placeholder="Monto a transferir">
-            <br><br>
-            <input id="obsTransf" placeholder="Observaciones (opcional)">
-            <br><br>
-            <button onclick="guardarTransferenciaBolsillo()">Transferir</button>
+            <div class="card" style="max-width:480px;">
+                <div class="card-header"><h3>Transferir entre bolsillos</h3></div>
+                <p class="page-sub" style="margin-bottom:16px;">Ej: mover parte de la Ganancia Disponible al Fondo de Emergencia o a la Billetera Angie.</p>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Desde</label>
+                        <select id="bolsilloOrigenTransf">
+                            <option value="CAPITAL_REAL">Capital Real</option>
+                            <option value="GANANCIA_DISP" selected>Ganancia Disponible</option>
+                            <option value="FONDO_EMERG">Fondo Emergencia</option>
+                            <option value="BILLETERA_ANGIE">Billetera Angie</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Hacia</label>
+                        <select id="bolsilloDestinoTransf">
+                            <option value="CAPITAL_REAL">Capital Real</option>
+                            <option value="GANANCIA_DISP">Ganancia Disponible</option>
+                            <option value="FONDO_EMERG" selected>Fondo Emergencia</option>
+                            <option value="BILLETERA_ANGIE">Billetera Angie</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Monto a transferir</label>
+                    <input id="montoTransf" type="number" placeholder="$">
+                </div>
+                <div class="field">
+                    <label>Observaciones (opcional)</label>
+                    <input id="obsTransf" type="text" placeholder="Opcional">
+                </div>
+                <button class="btn btn-secondary btn-block" onclick="guardarTransferenciaBolsillo()">Transferir</button>
+            </div>
         `;
     }
 
     if (modulo === "reservas") {
         contenido.innerHTML = `
-            <h2>Nueva Reserva</h2>
-            <input id="clienteReserva" placeholder="ID Cliente">
-            <br><br>
-            <input id="varianteReserva" placeholder="ID Variante">
-            <br><br>
-            <input id="cantidadReserva" type="number" placeholder="Cantidad">
-            <br><br>
-            <input id="precioReserva" type="number" placeholder="Precio Fijado">
-            <br><br>
-            <input id="vencimientoReserva" type="date">
-            <br><br>
-            <input id="obsReserva" placeholder="Observaciones (opcional)">
-            <br><br>
-            <button onclick="guardarReserva()">Guardar Reserva</button>
+            <div class="page-header"><div><h2>Reservas</h2><p class="page-sub">Apartá mercadería sin sacarla del stock físico.</p></div></div>
 
-            <hr>
-            <h2>Reservas</h2>
-            <button onclick="cargarReservas()">Actualizar Listado</button>
-            <div id="listaReservas"><p>Cargando...</p></div>
+            <div class="card" style="max-width:480px;">
+                <div class="card-header"><h3>Nueva reserva</h3></div>
+                <div class="field avanzado">
+                    <label>ID de cliente</label>
+                    <input id="clienteReserva" type="text" placeholder="Ej: CLI-A1B2C3D4">
+                </div>
+                <div class="field avanzado">
+                    <label>Producto (ID de variante)</label>
+                    <input id="varianteReserva" type="text" placeholder="Ej: VAR-A1B2C3D4">
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Cantidad</label>
+                        <input id="cantidadReserva" type="number" placeholder="1">
+                    </div>
+                    <div class="field">
+                        <label>Precio fijado</label>
+                        <input id="precioReserva" type="number" placeholder="$">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Vencimiento</label>
+                    <input id="vencimientoReserva" type="date">
+                </div>
+                <div class="field">
+                    <label>Observaciones (opcional)</label>
+                    <input id="obsReserva" type="text" placeholder="Opcional">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="guardarReserva()">Guardar reserva</button>
+            </div>
+
+            <div class="card-header" style="margin-top:8px;">
+                <h3>Reservas cargadas</h3>
+                <button class="btn btn-ghost btn-sm" onclick="cargarReservas()">Actualizar</button>
+            </div>
+            <div id="listaReservas"></div>
         `;
         cargarReservas();
     }
 
     if (modulo === "radar") {
         contenido.innerHTML = `
-            <h2>Radar de Clientes</h2>
-            <input id="busquedaRadar" placeholder="Buscar por nombre, teléfono o Instagram" oninput="buscarEnRadar()">
-            <div id="resultadosBusquedaRadar"></div>
+            <div class="page-header"><div><h2>Radar de Clientes</h2><p class="page-sub">Quién compra seguido, quién no vuelve hace rato, y quién te debe.</p></div></div>
 
-            <hr>
-            <h3>Clientes Frecuentes</h3>
-            <div id="radarFrecuentes"><p>Cargando...</p></div>
+            <div class="field search-wrap" style="max-width:420px;">
+                <input id="busquedaRadar" type="text" placeholder="Buscar por nombre, teléfono o Instagram" oninput="buscarEnRadar()">
+                <div id="resultadosBusquedaRadar" class="search-results" style="display:none;"></div>
+            </div>
 
-            <h3>Clientes Inactivos</h3>
-            <div id="radarInactivos"><p>Cargando...</p></div>
+            <div class="card">
+                <div class="card-header"><h3>Clientes frecuentes</h3></div>
+                <div id="radarFrecuentes"></div>
+            </div>
 
-            <h3>Clientes con Deuda</h3>
-            <div id="radarConDeuda"><p>Cargando...</p></div>
+            <div class="card">
+                <div class="card-header"><h3>Clientes inactivos</h3></div>
+                <div id="radarInactivos"></div>
+            </div>
 
-            <hr>
-            <h3>Registrar Cobro de Deuda</h3>
-            <p>Necesitás el ID de la venta original (la que generó la deuda).</p>
-            <input id="clienteCobro" placeholder="ID Cliente">
-            <br><br>
-            <input id="ventaRefCobro" placeholder="ID Venta (origen de la deuda)">
-            <br><br>
-            <input id="montoCobro" type="number" placeholder="Monto cobrado">
-            <br><br>
-            <input id="metodoPagoCobro" placeholder="ID Método de Pago (opcional)">
-            <br><br>
-            <button onclick="registrarCobroDeuda()">Registrar Cobro</button>
+            <div class="card">
+                <div class="card-header"><h3>Clientes con deuda</h3></div>
+                <div id="radarConDeuda"></div>
+            </div>
+
+            <div class="card" style="max-width:480px;">
+                <div class="card-header"><h3>Registrar cobro de deuda</h3></div>
+                <p class="page-sub" style="margin-bottom:16px;">Necesitás el ID de la venta original que generó la deuda.</p>
+                <div class="field avanzado">
+                    <label>ID de cliente</label>
+                    <input id="clienteCobro" type="text" placeholder="Ej: CLI-A1B2C3D4">
+                </div>
+                <div class="field avanzado">
+                    <label>ID de venta (origen de la deuda)</label>
+                    <input id="ventaRefCobro" type="text" placeholder="Ej: uuid de la venta">
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Monto cobrado</label>
+                        <input id="montoCobro" type="number" placeholder="$">
+                    </div>
+                    <div class="field">
+                        <label>Método de pago (opcional)</label>
+                        <input id="metodoPagoCobro" type="text" placeholder="Opcional">
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="registrarCobroDeuda()">Registrar cobro</button>
+            </div>
         `;
         cargarRadar();
     }
 
     if (modulo === "admin") {
         contenido.innerHTML = `
-            <h2>Administración</h2>
-            <div class="card" style="border:2px solid red;">
-                <h3>⚠️ Reiniciar datos de prueba</h3>
-                <p>Borra TODOS los movimientos de Compras, Ventas, Stock, Envíos, Reservas,
-                Cuenta Corriente, Caja Física y Bolsillos Virtuales, y pone Stock Físico y
-                Stock Reservado en 0 en todas las variantes.</p>
-                <p><strong>NO borra:</strong> colores, talles, categorías, etiquetas, métodos de
-                pago/envío, proveedores, clientes ni productos/variantes (solo su stock).</p>
-                <p><strong>Esta acción no se puede deshacer.</strong> Usarla solo antes de empezar
-                a operar con datos reales, para limpiar las pruebas.</p>
-                <button onclick="reiniciarDatosPruebaWeb()" style="background:red;color:white;">
-                    Reiniciar datos de prueba
-                </button>
+            <div class="page-header"><div><h2>Administración</h2><p class="page-sub">Herramientas de mantenimiento del sistema.</p></div></div>
+
+            <div class="card zona-riesgo" style="max-width:560px;">
+                <h3>Reiniciar datos de prueba</h3>
+                <p>Borra todos los movimientos de Compras, Ventas, Stock, Envíos, Reservas, Cuenta Corriente,
+                Caja Física y Bolsillos Virtuales, y pone Stock Físico y Stock Reservado en 0 en todas las variantes.</p>
+                <p><strong>No borra:</strong> colores, talles, categorías, métodos de pago/envío, proveedores,
+                clientes ni productos/variantes (solo su stock).</p>
+                <p><strong>Esta acción no se puede deshacer.</strong></p>
+                <button class="btn btn-danger" onclick="reiniciarDatosPruebaWeb()">Reiniciar datos de prueba</button>
             </div>
         `;
     }
@@ -349,7 +503,8 @@ async function cargarDashboard() {
         document.getElementById("kpiStockBajo").textContent = datos.stockBajo;
         document.getElementById("kpiReservasActivas").textContent = datos.reservasActivas;
     } catch (error) {
-        document.getElementById("contenido").innerHTML += `<p style="color:red;">Error al cargar el dashboard: ${error.message}</p>`;
+        document.getElementById("contenido").insertAdjacentHTML("beforeend",
+            `<p style="color:var(--danger);">Error al cargar el dashboard: ${error.message}</p>`);
     }
 }
 
@@ -358,24 +513,44 @@ async function cargarAlertas() {
         const datos = await llamarBackend({ url: WEB_APP_URL + "?accion=alertas" });
         if (datos.status !== "SUCCESS") throw new Error(datos.mensaje || "No se pudieron cargar las alertas.");
 
-        const divStock = document.getElementById("alertaStockBajo");
-        divStock.innerHTML = "<h4>Stock Bajo</h4>" + (datos.stockBajo.length === 0
-            ? "<p>Sin alertas de stock.</p>"
-            : datos.stockBajo.map(v => `<p>⚠️ ${v.producto} (${v.idVariante}): disponible ${v.stockDisponible} / repone en ${v.puntoReposicion}</p>`).join(""));
+        document.getElementById("alertaStockBajo").innerHTML = renderListaAlertas(
+            "Stock bajo",
+            datos.stockBajo,
+            v => `<strong>${v.producto}</strong> — disponible ${v.stockDisponible} (repone en ${v.puntoReposicion})`,
+            "danger"
+        );
 
-        const divReservas = document.getElementById("alertaReservas");
-        divReservas.innerHTML = "<h4>Reservas por vencer</h4>" + (datos.reservasPorVencer.length === 0
-            ? "<p>Sin reservas por vencer en los próximos días.</p>"
-            : datos.reservasPorVencer.map(r => `<p>⏰ ${r.idReserva} — Cliente ${r.idCliente} — Vence ${formatearFecha(r.vencimiento)} — ${formatearMoneda(r.totalReserva)}</p>`).join(""));
+        document.getElementById("alertaReservas").innerHTML = renderListaAlertas(
+            "Reservas por vencer",
+            datos.reservasPorVencer,
+            r => `Reserva de <strong>${formatearMoneda(r.totalReserva)}</strong> vence el ${formatearFecha(r.vencimiento)}`,
+            ""
+        );
 
-        const divDeuda = document.getElementById("alertaDeuda");
-        divDeuda.innerHTML = "<h4>Clientes con deuda</h4>" + (datos.clientesConDeuda.length === 0
-            ? "<p>Nadie tiene deuda pendiente.</p>"
-            : datos.clientesConDeuda.map(c => `<p>💸 ${c.nombre} (${c.idCliente}): ${formatearMoneda(c.saldoPendiente)}</p>`).join(""));
-
+        document.getElementById("alertaDeuda").innerHTML = renderListaAlertas(
+            "Clientes con deuda",
+            datos.clientesConDeuda,
+            c => `<strong>${c.nombre}</strong> debe ${formatearMoneda(c.saldoPendiente)}`,
+            ""
+        );
     } catch (error) {
         console.error("Error al cargar alertas: " + error.message);
     }
+}
+
+function renderListaAlertas(titulo, items, renderItem, tipoDot) {
+    let html = `<h4 style="font-size:14px;color:var(--ink-soft);font-weight:600;margin:14px 0 4px 0;">${titulo}</h4>`;
+    if (!items || items.length === 0) {
+        html += `<p class="alert-empty">Sin novedades por acá.</p>`;
+        return html;
+    }
+    html += `<div class="alert-list">` + items.map(item => `
+        <div class="alert-item">
+            <span class="alert-dot ${tipoDot}"></span>
+            <span>${renderItem(item)}</span>
+        </div>
+    `).join("") + `</div>`;
+    return html;
 }
 
 // ============================================================
@@ -387,68 +562,62 @@ async function cargarRadar() {
         const datos = await llamarBackend({ url: WEB_APP_URL + "?accion=radarClientes" });
         if (datos.status !== "SUCCESS") throw new Error(datos.mensaje || "No se pudo cargar el radar.");
 
-        document.getElementById("radarFrecuentes").innerHTML = datos.frecuentes.length === 0
-            ? "<p>Todavía no hay clientes frecuentes.</p>"
-            : datos.frecuentes.map(renderTarjetaCliente).join("");
-
-        document.getElementById("radarInactivos").innerHTML = datos.inactivos.length === 0
-            ? "<p>No hay clientes inactivos.</p>"
-            : datos.inactivos.map(renderTarjetaCliente).join("");
-
-        document.getElementById("radarConDeuda").innerHTML = datos.conDeuda.length === 0
-            ? "<p>Nadie tiene deuda pendiente.</p>"
-            : datos.conDeuda.map(renderTarjetaCliente).join("");
-
+        document.getElementById("radarFrecuentes").innerHTML = renderListaClientes(datos.frecuentes, "Todavía no hay clientes frecuentes.");
+        document.getElementById("radarInactivos").innerHTML = renderListaClientes(datos.inactivos, "No hay clientes inactivos.");
+        document.getElementById("radarConDeuda").innerHTML = renderListaClientes(datos.conDeuda, "Nadie tiene deuda pendiente.");
     } catch (error) {
-        document.getElementById("contenido").innerHTML += `<p style="color:red;">Error al cargar el radar: ${error.message}</p>`;
+        document.getElementById("contenido").insertAdjacentHTML("beforeend",
+            `<p style="color:var(--danger);">Error al cargar el radar: ${error.message}</p>`);
     }
 }
 
-function renderTarjetaCliente(c) {
-    return `
-        <div class="card">
-            <h3>${c.nombre} (${c.idCliente})</h3>
-            <p>Última compra: ${formatearFecha(c.ultimaCompra)}</p>
-            <p>Cantidad de compras: ${c.cantidadCompras}</p>
-            <p>Total gastado: ${formatearMoneda(c.totalGastado)}</p>
-            <p>Saldo pendiente: ${formatearMoneda(c.saldoPendiente)}</p>
+function renderListaClientes(lista, textoVacio) {
+    if (!lista || lista.length === 0) {
+        return `<p class="empty-state">${textoVacio}</p>`;
+    }
+    return lista.map(c => `
+        <div class="card-cliente">
+            <h4>${c.nombre}<span class="id-chip">${c.idCliente}</span></h4>
+            <div class="fila"><span>Última compra</span><strong>${formatearFecha(c.ultimaCompra)}</strong></div>
+            <div class="fila"><span>Compras totales</span><strong>${c.cantidadCompras}</strong></div>
+            <div class="fila"><span>Total gastado</span><strong>${formatearMoneda(c.totalGastado)}</strong></div>
+            <div class="fila"><span>Saldo pendiente</span><strong>${formatearMoneda(c.saldoPendiente)}</strong></div>
         </div>
-    `;
+    `).join("");
 }
 
 let timeoutBusquedaRadar = null;
 function buscarEnRadar() {
     clearTimeout(timeoutBusquedaRadar);
     const q = document.getElementById("busquedaRadar").value;
+    const contenedor = document.getElementById("resultadosBusquedaRadar");
     timeoutBusquedaRadar = setTimeout(async () => {
-        const contenedor = document.getElementById("resultadosBusquedaRadar");
-        if (!q) { contenedor.innerHTML = ""; return; }
+        if (!q) { contenedor.style.display = "none"; contenedor.innerHTML = ""; return; }
         try {
             const datos = await llamarBackend({ url: WEB_APP_URL + "?accion=buscarClientes&q=" + encodeURIComponent(q) });
-            contenedor.innerHTML = datos.resultados.map(c => `<p>${c.nombre} — ${c.telefono} (${c.idCliente})</p>`).join("") || "<p>Sin resultados.</p>";
+            contenedor.innerHTML = (datos.resultados || []).map(c => `<p>${c.nombre} — ${c.telefono}<span class="id-chip">${c.idCliente}</span></p>`).join("") || "<p>Sin resultados.</p>";
+            contenedor.style.display = "block";
         } catch (error) {
-            contenedor.innerHTML = "";
+            contenedor.style.display = "none";
         }
     }, 300);
 }
 
-/**
- * Búsqueda rápida reutilizable para autocompletar el ID de cliente al vender/reservar.
- */
 let timeoutBusquedaCliente = null;
 function buscarClientesWeb(idInputBusqueda, idContenedorResultados, idInputDestino) {
     clearTimeout(timeoutBusquedaCliente);
     const q = document.getElementById(idInputBusqueda).value;
+    const contenedor = document.getElementById(idContenedorResultados);
     timeoutBusquedaCliente = setTimeout(async () => {
-        const contenedor = document.getElementById(idContenedorResultados);
-        if (!q) { contenedor.innerHTML = ""; return; }
+        if (!q) { contenedor.style.display = "none"; contenedor.innerHTML = ""; return; }
         try {
             const datos = await llamarBackend({ url: WEB_APP_URL + "?accion=buscarClientes&q=" + encodeURIComponent(q) });
-            contenedor.innerHTML = datos.resultados.map(c =>
-                `<p onclick="document.getElementById('${idInputDestino}').value='${c.idCliente}'; document.getElementById('${idContenedorResultados}').innerHTML='';" style="cursor:pointer;">${c.nombre} — ${c.telefono} (${c.idCliente})</p>`
+            contenedor.innerHTML = (datos.resultados || []).map(c =>
+                `<p onclick="document.getElementById('${idInputDestino}').value='${c.idCliente}'; document.getElementById('${idInputBusqueda}').value='${(c.nombre || "").replace(/'/g, "")}'; document.getElementById('${idContenedorResultados}').style.display='none';">${c.nombre} — ${c.telefono}<span class="id-chip">${c.idCliente}</span></p>`
             ).join("") || "<p>Sin resultados.</p>";
+            contenedor.style.display = "block";
         } catch (error) {
-            contenedor.innerHTML = "";
+            contenedor.style.display = "none";
         }
     }, 300);
 }
@@ -470,7 +639,7 @@ async function guardarMovimientoCaja() {
     try {
         const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosCaja });
         alert(JSON.stringify(resultado));
-        if (resultado.status === "SUCCESS") mostrarModulo("caja");
+        if (resultado.status === "SUCCESS") irAModulo("caja");
     } catch (error) {
         alert("Error: " + error);
     }
@@ -494,7 +663,7 @@ async function guardarTransferenciaBolsillo() {
     try {
         const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosTransferencia });
         alert(JSON.stringify(resultado));
-        if (resultado.status === "SUCCESS") mostrarModulo("caja");
+        if (resultado.status === "SUCCESS") irAModulo("caja");
     } catch (error) {
         alert("Error: " + error);
     }
@@ -506,30 +675,59 @@ async function guardarTransferenciaBolsillo() {
 
 async function cargarReservas() {
     const contenedor = document.getElementById("listaReservas");
+    if (!contenedor) return;
     try {
         const datos = await llamarBackend({ url: WEB_APP_URL + "?accion=reservas" });
         if (datos.status !== "SUCCESS") throw new Error(datos.mensaje || "No se pudieron cargar las reservas.");
 
         if (datos.reservas.length === 0) {
-            contenedor.innerHTML = "<p>No hay reservas cargadas.</p>";
+            contenedor.innerHTML = `<p class="empty-state">No hay reservas cargadas.</p>`;
             return;
         }
 
-        contenedor.innerHTML = datos.reservas.map(r => `
-            <div class="card">
-                <h3>${r.idReserva} — ${r.estado}</h3>
-                <p>Cliente: ${r.idCliente}</p>
-                <p>Total: ${formatearMoneda(r.totalReserva)}</p>
-                <p>Vencimiento: ${formatearFecha(r.vencimiento)}</p>
-                ${r.estado === "ACTIVA" ? `
-                    <button onclick="convertirReservaWeb('${r.idReserva}')">Convertir en Venta</button>
-                    <button onclick="vencerReservaWeb('${r.idReserva}')">Vencer</button>
-                    <button onclick="cancelarReservaWeb('${r.idReserva}')">Cancelar</button>
-                ` : ""}
+        const badgeClase = {
+            ACTIVA: "badge-activa",
+            ENTREGADA: "badge-entregada",
+            CANCELADA: "badge-cancelada",
+            VENCIDA: "badge-vencida"
+        };
+
+        contenedor.innerHTML = `
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Vencimiento</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${datos.reservas.map(r => `
+                            <tr>
+                                <td>${r.idCliente}</td>
+                                <td class="num">${formatearMoneda(r.totalReserva)}</td>
+                                <td>${formatearFecha(r.vencimiento)}</td>
+                                <td><span class="badge ${badgeClase[r.estado] || ""}">${r.estado}</span></td>
+                                <td>
+                                    ${r.estado === "ACTIVA" ? `
+                                        <div class="btn-row">
+                                            <button class="btn btn-secondary btn-sm" onclick="convertirReservaWeb('${r.idReserva}')">Convertir</button>
+                                            <button class="btn btn-ghost btn-sm" onclick="vencerReservaWeb('${r.idReserva}')">Vencer</button>
+                                            <button class="btn btn-ghost btn-sm" onclick="cancelarReservaWeb('${r.idReserva}')">Cancelar</button>
+                                        </div>
+                                    ` : ""}
+                                </td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
             </div>
-        `).join("");
+        `;
     } catch (error) {
-        contenedor.innerHTML = `<p style="color:red;">Error al cargar reservas: ${error.message}</p>`;
+        contenedor.innerHTML = `<p style="color:var(--danger);">Error al cargar reservas: ${error.message}</p>`;
     }
 }
 
@@ -549,7 +747,7 @@ async function guardarReserva() {
     try {
         const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosReserva });
         alert(JSON.stringify(resultado));
-        if (resultado.status === "SUCCESS") mostrarModulo("reservas");
+        if (resultado.status === "SUCCESS") irAModulo("reservas");
     } catch (error) {
         alert("Error: " + error);
     }
@@ -575,14 +773,58 @@ async function ejecutarAccionReserva(tipoOperacion, idReserva, datosExtra) {
 }
 
 // ============================================================
+// COBRO DE DEUDA
+// ============================================================
+
+async function registrarCobroDeuda() {
+    const datosCobro = {
+        tipoOperacion: "COBRAR_DEUDA",
+        fechaHora: new Date().toISOString(),
+        idCliente: document.getElementById("clienteCobro").value,
+        idVentaRef: document.getElementById("ventaRefCobro").value,
+        monto: Number(document.getElementById("montoCobro").value),
+        idMetodoPago: document.getElementById("metodoPagoCobro").value,
+        observaciones: "Cobro registrado desde el Radar de Clientes"
+    };
+    try {
+        const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosCobro });
+        alert(JSON.stringify(resultado));
+        if (resultado.status === "SUCCESS") irAModulo("radar");
+    } catch (error) {
+        alert("Error: " + error);
+    }
+}
+
+// ============================================================
+// ADMINISTRACIÓN — Reiniciar datos de prueba
+// ============================================================
+
+async function reiniciarDatosPruebaWeb() {
+    if (!confirm("¿Seguro que querés borrar TODOS los datos transaccionales de prueba? Esta acción NO se puede deshacer.")) {
+        return;
+    }
+    const textoConfirmacion = prompt('Para confirmar, escribí exactamente: REINICIAR-SOLANNAOS');
+    if (textoConfirmacion !== "REINICIAR-SOLANNAOS") {
+        alert("Confirmación incorrecta. No se realizó ningún cambio.");
+        return;
+    }
+    try {
+        const resultado = await llamarBackend({
+            url: WEB_APP_URL,
+            method: "POST",
+            body: { tipoOperacion: "REINICIAR_DATOS_PRUEBA", confirmacion: textoConfirmacion }
+        });
+        alert(JSON.stringify(resultado));
+        if (resultado.status === "SUCCESS") irAModulo("inicio");
+    } catch (error) {
+        alert("Error: " + error);
+    }
+}
+
+// ============================================================
 // VENTAS / COMPRAS / CLIENTES / PRODUCTOS
 // ============================================================
 
-/**
- * Heurística para armar el link de WhatsApp: deja solo dígitos y, si parece
- * un celular argentino sin código de país (10 dígitos), le antepone 549.
- * Revisar/ajustar según cómo cargues los teléfonos en MST_CLIENTES.
- */
 function formatearTelefonoWhatsApp(telefono) {
     const soloDigitos = String(telefono || "").replace(/\D/g, "");
     if (soloDigitos.length === 10) return "549" + soloDigitos;
@@ -597,10 +839,13 @@ function mostrarComprobante(comprobante) {
     const linkWa = "https://wa.me/" + telefonoWa + "?text=" + encodeURIComponent(comprobante.textoComprobante);
 
     contenedor.innerHTML = `
-        <hr>
-        <h3>Comprobante</h3>
-        <pre style="white-space:pre-wrap;">${comprobante.textoComprobante}</pre>
-        ${telefonoWa ? `<a href="${linkWa}" target="_blank"><button>Enviar por WhatsApp</button></a>` : "<p>El cliente no tiene teléfono cargado.</p>"}
+        <div class="comprobante-card">
+            <h3>Comprobante</h3>
+            <div class="comprobante-texto">${comprobante.textoComprobante}</div>
+            ${telefonoWa
+                ? `<a href="${linkWa}" target="_blank"><button class="btn btn-primary">Enviar por WhatsApp</button></a>`
+                : `<p class="page-sub">El cliente no tiene teléfono cargado.</p>`}
+        </div>
     `;
 }
 
@@ -679,55 +924,6 @@ async function guardarProducto() {
     try {
         const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosProducto });
         alert(JSON.stringify(resultado));
-    } catch (error) {
-        alert("Error: " + error);
-    }
-}
-
-// ============================================================
-// COBRO DE DEUDA (Cuenta Corriente)
-// ============================================================
-
-async function registrarCobroDeuda() {
-    const datosCobro = {
-        tipoOperacion: "COBRAR_DEUDA",
-        fechaHora: new Date().toISOString(),
-        idCliente: document.getElementById("clienteCobro").value,
-        idVentaRef: document.getElementById("ventaRefCobro").value,
-        monto: Number(document.getElementById("montoCobro").value),
-        idMetodoPago: document.getElementById("metodoPagoCobro").value,
-        observaciones: "Cobro registrado desde el Radar de Clientes"
-    };
-    try {
-        const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosCobro });
-        alert(JSON.stringify(resultado));
-        if (resultado.status === "SUCCESS") mostrarModulo("radar");
-    } catch (error) {
-        alert("Error: " + error);
-    }
-}
-
-// ============================================================
-// ADMINISTRACIÓN — Reiniciar datos de prueba
-// ============================================================
-
-async function reiniciarDatosPruebaWeb() {
-    if (!confirm("¿Seguro que querés borrar TODOS los datos transaccionales de prueba? Esta acción NO se puede deshacer.")) {
-        return;
-    }
-    const textoConfirmacion = prompt('Para confirmar, escribí exactamente: REINICIAR-SOLANNAOS');
-    if (textoConfirmacion !== "REINICIAR-SOLANNAOS") {
-        alert("Confirmación incorrecta. No se realizó ningún cambio.");
-        return;
-    }
-    try {
-        const resultado = await llamarBackend({
-            url: WEB_APP_URL,
-            method: "POST",
-            body: { tipoOperacion: "REINICIAR_DATOS_PRUEBA", confirmacion: textoConfirmacion }
-        });
-        alert(JSON.stringify(resultado));
-        if (resultado.status === "SUCCESS") mostrarModulo("inicio");
     } catch (error) {
         alert("Error: " + error);
     }
