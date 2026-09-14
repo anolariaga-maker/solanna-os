@@ -20,8 +20,24 @@ function formatearFecha(fecha) {
 // ============================================================
 // LOGIN CON GOOGLE (Login restringido)
 // ============================================================
+//
+// index.html define, ANTES de pedir el script de Google, dos funciones
+// globales: onGoogleIdentityLoaded() y onGoogleIdentityError(), enganchadas
+// a los atributos onload/onerror del <script> de Google. Esas funciones,
+// a su vez, llaman a onGoogleIdentityReady() / onGoogleIdentityFailed()
+// (definidas acá abajo) SI ya existen. Como puede pasar en cualquier orden
+// (que Google cargue antes o después de que este archivo termine de
+// interpretarse), al final de este archivo revisamos el estado actual por
+// si el aviso ya pasó antes de que existiéramos.
 
-function iniciarLogin() {
+function onGoogleIdentityReady() {
+    if (typeof google === "undefined" || !google.accounts || !google.accounts.id) {
+        // No debería pasar nunca (onload solo dispara si cargó bien),
+        // pero si pasa, mostramos el error en vez de romper la consola.
+        onGoogleIdentityFailed();
+        return;
+    }
+
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
@@ -31,6 +47,26 @@ function iniciarLogin() {
         { theme: "outline", size: "large", text: "signin_with" }
     );
     google.accounts.id.prompt();
+}
+
+function onGoogleIdentityFailed() {
+    const elError = document.getElementById("errorLogin");
+    if (elError) {
+        elError.textContent = "No se pudo cargar el inicio de sesión de Google. " +
+            "Revisá tu conexión a internet y recargá la página. Si el problema sigue, " +
+            "puede ser un bloqueador de scripts/anuncios interfiriendo con accounts.google.com.";
+    }
+}
+
+// Punto de entrada real: se ejecuta apenas el navegador termina de leer
+// este archivo. Si Google Identity ya avisó que está listo (o que falló)
+// ANTES de que llegáramos hasta acá, actuamos ya. Si todavía está
+// cargando, no hacemos nada más: cuando termine, index.html va a llamar
+// a onGoogleIdentityReady()/onGoogleIdentityFailed() por su cuenta.
+if (window.googleIdentityStatus === "listo") {
+    onGoogleIdentityReady();
+} else if (window.googleIdentityStatus === "error") {
+    onGoogleIdentityFailed();
 }
 
 function handleCredentialResponse(response) {
