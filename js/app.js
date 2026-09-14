@@ -258,8 +258,40 @@ function mostrarModulo(modulo) {
 
             <h3>Clientes con Deuda</h3>
             <div id="radarConDeuda"><p>Cargando...</p></div>
+
+            <hr>
+            <h3>Registrar Cobro de Deuda</h3>
+            <p>Necesitás el ID de la venta original (la que generó la deuda).</p>
+            <input id="clienteCobro" placeholder="ID Cliente">
+            <br><br>
+            <input id="ventaRefCobro" placeholder="ID Venta (origen de la deuda)">
+            <br><br>
+            <input id="montoCobro" type="number" placeholder="Monto cobrado">
+            <br><br>
+            <input id="metodoPagoCobro" placeholder="ID Método de Pago (opcional)">
+            <br><br>
+            <button onclick="registrarCobroDeuda()">Registrar Cobro</button>
         `;
         cargarRadar();
+    }
+
+    if (modulo === "admin") {
+        contenido.innerHTML = `
+            <h2>Administración</h2>
+            <div class="card" style="border:2px solid red;">
+                <h3>⚠️ Reiniciar datos de prueba</h3>
+                <p>Borra TODOS los movimientos de Compras, Ventas, Stock, Envíos, Reservas,
+                Cuenta Corriente, Caja Física y Bolsillos Virtuales, y pone Stock Físico y
+                Stock Reservado en 0 en todas las variantes.</p>
+                <p><strong>NO borra:</strong> colores, talles, categorías, etiquetas, métodos de
+                pago/envío, proveedores, clientes ni productos/variantes (solo su stock).</p>
+                <p><strong>Esta acción no se puede deshacer.</strong> Usarla solo antes de empezar
+                a operar con datos reales, para limpiar las pruebas.</p>
+                <button onclick="reiniciarDatosPruebaWeb()" style="background:red;color:white;">
+                    Reiniciar datos de prueba
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -611,6 +643,55 @@ async function guardarProducto() {
     try {
         const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosProducto });
         alert(JSON.stringify(resultado));
+    } catch (error) {
+        alert("Error: " + error);
+    }
+}
+
+// ============================================================
+// COBRO DE DEUDA (Cuenta Corriente)
+// ============================================================
+
+async function registrarCobroDeuda() {
+    const datosCobro = {
+        tipoOperacion: "COBRAR_DEUDA",
+        fechaHora: new Date().toISOString(),
+        idCliente: document.getElementById("clienteCobro").value,
+        idVentaRef: document.getElementById("ventaRefCobro").value,
+        monto: Number(document.getElementById("montoCobro").value),
+        idMetodoPago: document.getElementById("metodoPagoCobro").value,
+        observaciones: "Cobro registrado desde el Radar de Clientes"
+    };
+    try {
+        const resultado = await llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosCobro });
+        alert(JSON.stringify(resultado));
+        if (resultado.status === "SUCCESS") mostrarModulo("radar");
+    } catch (error) {
+        alert("Error: " + error);
+    }
+}
+
+// ============================================================
+// ADMINISTRACIÓN — Reiniciar datos de prueba
+// ============================================================
+
+async function reiniciarDatosPruebaWeb() {
+    if (!confirm("¿Seguro que querés borrar TODOS los datos transaccionales de prueba? Esta acción NO se puede deshacer.")) {
+        return;
+    }
+    const textoConfirmacion = prompt('Para confirmar, escribí exactamente: REINICIAR-SOLANNAOS');
+    if (textoConfirmacion !== "REINICIAR-SOLANNAOS") {
+        alert("Confirmación incorrecta. No se realizó ningún cambio.");
+        return;
+    }
+    try {
+        const resultado = await llamarBackend({
+            url: WEB_APP_URL,
+            method: "POST",
+            body: { tipoOperacion: "REINICIAR_DATOS_PRUEBA", confirmacion: textoConfirmacion }
+        });
+        alert(JSON.stringify(resultado));
+        if (resultado.status === "SUCCESS") mostrarModulo("inicio");
     } catch (error) {
         alert("Error: " + error);
     }
