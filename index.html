@@ -1,46 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolannaOS</title>
-
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-
 <body>
 
-    <div class="container">
-
+    <!-- ============================================================ -->
+    <!-- PANTALLA DE LOGIN — se muestra hasta iniciar sesión con Google -->
+    <!-- ============================================================ -->
+    <div id="loginScreen">
         <h1>SolannaOS</h1>
+        <p>Iniciá sesión con la cuenta de Google autorizada para continuar.</p>
+        <div id="botonGoogleLogin"></div>
+        <p id="errorLogin" style="color:red;"></p>
+    </div>
 
-        <p class="subtitle">
-            Sistema de Gestión
-        </p>
+    <!-- ============================================================ -->
+    <!-- APLICACIÓN — oculta hasta que el login sea exitoso             -->
+    <!-- ============================================================ -->
+    <div id="appScreen" style="display:none;">
 
-        <div class="menu">
-            
-            <button onclick="mostrarModulo('inicio')">Inicio</button>
-            
-            <button onclick="mostrarModulo('ventas')">Ventas</button>
+        <header>
+            <h1>SolannaOS</h1>
+            <nav>
+                <button onclick="mostrarModulo('inicio')">Inicio</button>
+                <button onclick="mostrarModulo('ventas')">Ventas</button>
+                <button onclick="mostrarModulo('compras')">Compras</button>
+                <button onclick="mostrarModulo('clientes')">Clientes</button>
+                <button onclick="mostrarModulo('productos')">Productos</button>
+                <button onclick="mostrarModulo('reservas')">Reservas</button>
+                <button onclick="mostrarModulo('radar')">Radar</button>
+                <button onclick="mostrarModulo('caja')">Caja</button>
+                <button onclick="mostrarModulo('admin')">Administración</button>
+                <button onclick="cerrarSesion()">Salir</button>
+            </nav>
+        </header>
 
-            <button onclick="mostrarModulo('compras')">Compras</button>
-
-            <button onclick="mostrarModulo('clientes')">Clientes</button>
-
-            <button onclick="mostrarModulo('productos')">Productos</button>
-
-            <button onclick="mostrarModulo('caja')">Caja</button>
-
-        </div>
-
-        <div id="contenido"></div>
+        <main id="contenido">
+            <!-- mostrarModulo() de app.js escribe acá adentro -->
+        </main>
 
     </div>
 
     <script src="js/app.js"></script>
-
+    <script>
+        iniciarLogin();
+    </script>
 </body>
-
 </html>
