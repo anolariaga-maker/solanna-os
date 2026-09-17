@@ -17,7 +17,7 @@
     --mauve: #8C7A80;
     --mauve-line: #E7DBD8;
     --ink: #2A1B22;
-    --ink-soft: #6B5A60;
+    --ink-soft: #5E4E54;
     --success: #4C7A5E;
     --success-tint: #E4EFE8;
     --danger: #A5493F;
@@ -545,8 +545,157 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: now
 .zona-riesgo h3 { color: var(--danger); }
 
 /* ============================================================
-   RESPONSIVE
+   BADGES — sistema de estados (reservas y ventas)
    ============================================================ */
+
+.badge-activa { background: var(--gold-tint); color: var(--gold); }
+.badge-entregada { background: var(--success-tint); color: var(--success); }
+.badge-cancelada { background: var(--ivory-deep); color: var(--mauve); }
+.badge-vencida { background: var(--danger-tint); color: var(--danger); }
+.badge-contado { background: var(--success-tint); color: var(--success); }
+.badge-credito-total { background: var(--danger-tint); color: var(--danger); }
+.badge-credito-parcial { background: var(--gold-tint); color: var(--gold); }
+
+/* ============================================================
+   LOADER / SPINNER
+   ============================================================ */
+
+.spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: girar 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+.spinner-lg { width: 26px; height: 26px; border-width: 3px; }
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.btn[data-cargando="1"] { opacity: 0.75; pointer-events: none; }
+
+.loader-bloque {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 20px;
+    color: var(--ink-soft);
+    font-size: 14px;
+}
+
+/* ============================================================
+   ESTADOS VACÍOS
+   ============================================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 44px 20px;
+    color: var(--ink-soft);
+}
+
+.empty-state .empty-icon {
+    width: 40px; height: 40px;
+    margin: 0 auto 12px auto;
+    border-radius: 50%;
+    background: var(--ivory-deep);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mauve);
+}
+
+.empty-state .empty-icon svg { width: 20px; height: 20px; }
+.empty-state strong { display: block; color: var(--ink); font-size: 14px; margin-bottom: 4px; }
+.empty-state span { font-size: 13px; }
+
+/* ============================================================
+   NOTIFICACIONES (toasts)
+   ============================================================ */
+
+.toast-container {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: min(360px, calc(100vw - 40px));
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--mauve-line);
+    border-left: 4px solid var(--mauve);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-pop);
+    padding: 13px 14px;
+    font-size: 13.5px;
+    color: var(--ink);
+    animation: entrar-toast 0.18s ease;
+}
+
+@keyframes entrar-toast {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-success { border-left-color: var(--success); }
+.toast-error { border-left-color: var(--danger); }
+.toast-warning { border-left-color: var(--gold); }
+.toast-info { border-left-color: var(--rose); }
+
+.toast svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+.toast-success svg { color: var(--success); }
+.toast-error svg { color: var(--danger); }
+.toast-warning svg { color: var(--gold); }
+.toast-info svg { color: var(--rose); }
+
+.toast-cerrar {
+    background: none; border: none; color: var(--mauve);
+    font-size: 15px; line-height: 1; padding: 0 0 0 6px; margin-left: auto;
+}
+
+/* ============================================================
+   MODAL DE CONFIRMACIÓN
+   ============================================================ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 10, 13, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 20px;
+}
+
+.modal-overlay.visible { display: flex; }
+
+.modal-box {
+    background: var(--card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop);
+    padding: 26px 26px 20px 26px;
+    max-width: 400px;
+    width: 100%;
+}
+
+.modal-box h3 { font-size: 18px; margin-bottom: 8px; }
+.modal-box p { font-size: 14px; margin-bottom: 16px; }
+.modal-box.modal-danger h3 { color: var(--danger); }
+
+.modal-box .field { margin-bottom: 18px; }
+
+.modal-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
 
 @media (max-width: 860px) {
     #appScreen { display: block; }
