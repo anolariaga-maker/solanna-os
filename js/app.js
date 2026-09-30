@@ -3,7 +3,8 @@ console.log("SolannaOS iniciado");
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw1A_BfKollxwhvr5o9iEEmVjk92FNOaM2BQQeSRk8UtIMXQCucjI3Cq--E264LJ3Q4/exec";
 
 // ⚠️ Debe ser EXACTAMENTE el mismo Client ID que pusiste en Auth.gs (GOOGLE_CLIENT_ID)
-const GOOGLE_CLIENT_ID = "642105410007-b8qd9ga1s9q7160q6ukc32u001mdd48r.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "TU_CLIENT_ID.apps.googleusercontent.com";
+
 let ID_TOKEN = null;
 let moduloActivo = "inicio";
 
@@ -369,12 +370,26 @@ function mostrarModulo(modulo) {
                 </div>
                 ${campoTexto({ id: "clienteVenta", label: "ID de cliente", placeholder: "Se completa solo al elegir arriba", avanzado: true })}
                 ${campoTexto({ id: "varianteVenta", label: "Producto (ID de variante)", placeholder: "Ej: VAR-A1B2C3D4", avanzado: true, hint: "Lo encontrás en el módulo Productos." })}
-                ${campoTexto({ id: "cantidadVenta", label: "Cantidad", placeholder: "1", tipo: "number" })}
+                <div class="form-grid">
+                    ${campoTexto({ id: "cantidadVenta", label: "Cantidad", placeholder: "1", tipo: "number" })}
+                    ${campoTexto({ id: "precioUnitarioVenta", label: "Precio unitario", placeholder: "$", tipo: "number" })}
+                </div>
+                ${campoSelect({ id: "estadoCobroVenta", label: "Cobro", opciones: [
+                    { valor: "CONTADO", texto: "Contado", selected: true },
+                    { valor: "CREDITO_TOTAL", texto: "Crédito total" },
+                    { valor: "CREDITO_PARCIAL", texto: "Crédito parcial" }
+                ]})}
+                <div id="campoMontoPagadoVenta" style="display:none;">
+                    ${campoTexto({ id: "montoPagadoVenta", label: "Monto pagado ahora", placeholder: "$", tipo: "number", hint: "Solo si es crédito parcial." })}
+                </div>
                 ${campoTexto({ id: "metodoPagoVenta", label: "Método de pago (opcional)", placeholder: "Ej: efectivo, transferencia" })}
                 <button class="btn btn-primary btn-block" id="btnGuardarVenta" onclick="guardarVenta()">Guardar venta</button>
                 <div id="comprobanteVenta">${estadoVacioHTML("Sin ventas todavía", "Cuando registres una venta, el comprobante va a aparecer acá.")}</div>
             </div>
         `;
+        document.getElementById("estadoCobroVenta").addEventListener("change", (e) => {
+            document.getElementById("campoMontoPagadoVenta").style.display = e.target.value === "CREDITO_PARCIAL" ? "block" : "none";
+        });
     }
 
     if (modulo === "clientes") {
@@ -398,6 +413,10 @@ function mostrarModulo(modulo) {
                 ${campoTexto({ id: "varianteCompra", label: "Producto (ID de variante)", placeholder: "Ej: VAR-A1B2C3D4", avanzado: true })}
                 ${campoTexto({ id: "cantidadCompra", label: "Cantidad", placeholder: "1", tipo: "number" })}
                 ${campoTexto({ id: "costoCompra", label: "Costo unitario", placeholder: "$", tipo: "number" })}
+                ${campoSelect({ id: "estadoPagoCompra", label: "Estado del pago", opciones: [
+                    { valor: "Pagado", texto: "Pagado", selected: true },
+                    { valor: "Adeudado", texto: "Adeudado" }
+                ]})}
                 ${campoTexto({ id: "metodoPagoCompra", label: "Método de pago (opcional)", placeholder: "Ej: efectivo, transferencia" })}
                 <button class="btn btn-primary btn-block" id="btnGuardarCompra" onclick="guardarCompra()">Guardar compra</button>
             </div>
@@ -506,8 +525,7 @@ function mostrarModulo(modulo) {
 
             <div class="card" style="max-width:480px;">
                 <div class="card-header"><h3>Registrar cobro de deuda</h3></div>
-                <p class="page-sub" style="margin-bottom:16px;">Necesitás el ID de la venta original que generó la deuda.</p>
-                ${campoTexto({ id: "clienteCobro", label: "ID de cliente", placeholder: "Ej: CLI-A1B2C3D4", avanzado: true })}
+                <p class="page-sub" style="margin-bottom:16px;">Necesitás el ID de la venta original que generó la deuda. El cliente se identifica solo a partir de esa venta.</p>
                 ${campoTexto({ id: "ventaRefCobro", label: "ID de venta (origen de la deuda)", placeholder: "Ej: uuid de la venta", avanzado: true })}
                 <div class="form-grid">
                     ${campoTexto({ id: "montoCobro", label: "Monto cobrado", placeholder: "$", tipo: "number" })}
@@ -835,7 +853,6 @@ async function registrarCobroDeuda() {
     const datosCobro = {
         tipoOperacion: "COBRAR_DEUDA",
         fechaHora: new Date().toISOString(),
-        idCliente: document.getElementById("clienteCobro").value,
         idVentaRef: document.getElementById("ventaRefCobro").value,
         monto: Number(document.getElementById("montoCobro").value),
         idMetodoPago: document.getElementById("metodoPagoCobro").value,
@@ -910,20 +927,24 @@ function mostrarComprobante(comprobante) {
 
 async function guardarVenta() {
     const boton = document.getElementById("btnGuardarVenta");
+    const estadoCobro = document.getElementById("estadoCobroVenta").value;
     const datosVenta = {
         tipoOperacion: "VENTA",
         idCliente: document.getElementById("clienteVenta").value,
         fechaHora: new Date().toISOString(),
         descMonto: 0,
-        estadoCobro: "CONTADO",
+        estadoCobro: estadoCobro,
         idMetodoPago: document.getElementById("metodoPagoVenta").value,
         observaciones: "Venta desde SolannaOS Web",
         productos: [{
             idVariante: document.getElementById("varianteVenta").value,
             cantidad: Number(document.getElementById("cantidadVenta").value),
-            precioUnitario: 8000
+            precioUnitario: Number(document.getElementById("precioUnitarioVenta").value)
         }]
     };
+    if (estadoCobro === "CREDITO_PARCIAL") {
+        datosVenta.montoPagado = Number(document.getElementById("montoPagadoVenta").value);
+    }
     try {
         const resultado = await ejecutarConLoader(boton, "Guardando...", () => llamarBackend({ url: WEB_APP_URL, method: "POST", body: datosVenta }));
         if (resultado.status === "SUCCESS") {
@@ -942,7 +963,7 @@ async function guardarCompra() {
         idProveedor: document.getElementById("proveedorCompra").value,
         fechaHora: new Date().toISOString(),
         facturaRemito: "",
-        estadoPago: "Pagado",
+        estadoPago: document.getElementById("estadoPagoCompra").value,
         idMetodoPago: document.getElementById("metodoPagoCompra").value,
         observaciones: "Compra desde SolannaOS Web",
         productos: [{
